@@ -292,7 +292,7 @@ const getOrderItems = async (req, res) => {
   try {
     // 1. Fetch order details
     const orderRes = await query(`
-      SELECT o.*, c.name AS customer_name, c.phone AS customer_phone 
+      SELECT o.*, c.name AS customer_name, c.phone AS customer_phone, c.balance AS current_customer_balance, c.id AS customer_code
       FROM orders o
       JOIN customers c ON o.customer_id = c.id
       WHERE o.id = $1`, [id]
@@ -311,9 +311,42 @@ const getOrderItems = async (req, res) => {
       WHERE oi.order_id = $1`, [id]
     );
 
+    // 3. Fetch cutting list items for these order items
+    const cuttingListsRes = await query(`
+      SELECT oicl.* 
+      FROM order_item_cutting_lists oicl
+      JOIN order_items oi ON oicl.order_item_id = oi.id
+      WHERE oi.order_id = $1
+    `, [id]);
+
+    const cuttingLists = cuttingListsRes.rows;
+
+    // Attach to items
+    const items = itemsRes.rows.map(item => {
+      return {
+        ...item,
+        quantity: parseFloat(item.quantity),
+        unit_price: parseFloat(item.unit_price),
+        discount: parseFloat(item.discount),
+        total_price: parseFloat(item.total_price),
+        cutting_list: cuttingLists.filter(cl => cl.order_item_id === item.id).map(cl => ({
+          ...cl,
+          demand_w: parseFloat(cl.demand_w),
+          demand_l: parseFloat(cl.demand_l),
+          demand_qty: parseFloat(cl.demand_qty),
+          demand_sqft: parseFloat(cl.demand_sqft),
+          billing_w: parseFloat(cl.billing_w),
+          billing_l: parseFloat(cl.billing_l),
+          billing_qty: parseFloat(cl.billing_qty),
+          billing_sqft: parseFloat(cl.billing_sqft),
+          wastage_diff: parseFloat(cl.wastage_diff)
+        }))
+      };
+    });
+
     res.json({
       order: orderRes.rows[0],
-      items: itemsRes.rows
+      items
     });
   } catch (err) {
     console.error('Error fetching order items:', err);
@@ -724,7 +757,12 @@ const checkoutOrder = async (req, res) => {
     amountPaid,
     bankId,
     paymentNote,
-    cartLocation
+    cartLocation,
+    communicate_type,
+    delivery_type,
+    delivery_date,
+    remarks,
+    sale_person
   } = req.body;
 
   const tempFilePath = req.file ? req.file.path : null;
@@ -807,14 +845,16 @@ const checkoutOrder = async (req, res) => {
         customer_id, user_id, total_price, amount_paid,
         discount, balance_due, change_due,
         payment_method_id, proof_of_payment,
-        payment_note, status, created_at
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'completed',NOW())
+        payment_note, status, created_at,
+        communicate_type, delivery_type, delivery_date, remarks, sale_person
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'completed',NOW(),$11,$12,$13,$14,$15)
       RETURNING id
     `, [
       resolvedCustomerId, req.user.id, total, paid,
       parseFloat(invoiceDiscount) || 0,
       balanceDue, changeDue,
-      parseInt(bankId), null, paymentNote || null
+      parseInt(bankId), null, paymentNote || null,
+      communicate_type || null, delivery_type || null, delivery_date || null, remarks || null, sale_person || null
     ]);
 
     const orderId = orderResult.rows[0].id;
@@ -822,7 +862,7 @@ const checkoutOrder = async (req, res) => {
     // Step 2 & 6 — Save order items & Deduct stock
     for (const item of parsedItems) {
       const productId = item.productId || item.product_id;
-      const qty = parseInt(item.qty || item.quantity);
+      const qty = parseFloat(item.qty || item.quantity);
       const price = parseFloat(item.price || item.unit_price);
       const disc = parseFloat(item.discount || 0);
       const itemLocation = item.location || cartLocation || 'Shop';
@@ -838,7 +878,7 @@ const checkoutOrder = async (req, res) => {
          WHERE product_id = $1 AND location = $2 AND deleted_at IS NULL`,
         [productId, itemLocation]
       );
-      const availableQty = parseInt(stockRes.rows[0].total_qty || 0);
+      const availableQty = parseFloat(stockRes.rows[0].total_qty || 0);
       if (availableQty < qty) {
         // Fetch product name for better error
         const prodNameRes = await client.query('SELECT name FROM products WHERE id = $1', [productId]);
@@ -846,10 +886,11 @@ const checkoutOrder = async (req, res) => {
         throw new Error(`Insufficient stock for '${productName}' at '${itemLocation}'. Available: ${availableQty}, Requested: ${qty}`);
       }
 
-      await client.query(`
+      const itemResult = await client.query(`
         INSERT INTO order_items
           (order_id, product_id, unit_price, quantity, discount, total_price)
         VALUES ($1, $2, $3, $4, $5, $6)
+        RETURNING id
       `, [
         orderId,
         productId,
@@ -858,6 +899,37 @@ const checkoutOrder = async (req, res) => {
         disc,
         itemTotalPrice
       ]);
+      const orderItemId = itemResult.rows[0].id;
+
+      // Insert cutting list rows if they exist
+      const cuttingList = item.cutting_list || item.cuttingList;
+      if (cuttingList && Array.isArray(cuttingList)) {
+        for (const row of cuttingList) {
+          await client.query(`
+            INSERT INTO order_item_cutting_lists (
+              order_item_id,
+              demand_w, demand_l, demand_uom, demand_qty, demand_sqft, demand_description,
+              billing_w, billing_l, billing_uom, billing_qty, billing_sqft, billing_detail,
+              wastage_diff
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+          `, [
+            orderItemId,
+            parseFloat(row.demand_w || row.demandW || 0),
+            parseFloat(row.demand_l || row.demandL || 0),
+            row.demand_uom || row.demandUom || 'in',
+            parseFloat(row.demand_qty || row.demandQty || 0),
+            parseFloat(row.demand_sqft || row.demandSqft || 0),
+            row.demand_description || row.demandDescription || '',
+            parseFloat(row.billing_w || row.billingW || 0),
+            parseFloat(row.billing_l || row.billingL || 0),
+            row.billing_uom || row.billingUom || 'in',
+            parseFloat(row.billing_qty || row.billingQty || 0),
+            parseFloat(row.billing_sqft || row.billingSqft || 0),
+            row.billing_detail || row.billingDetail || '',
+            parseFloat(row.wastage_diff || row.wastageDiff || 0)
+          ]);
+        }
+      }
 
       // Deduct stock (reusing robust logic)
       let remainingToDeduct = qty;
@@ -869,7 +941,8 @@ const checkoutOrder = async (req, res) => {
 
       for (const row of stockRows.rows) {
         if (remainingToDeduct <= 0) break;
-        const deduct = Math.min(row.quantity, remainingToDeduct);
+        const rowQty = parseFloat(row.quantity);
+        const deduct = Math.min(rowQty, remainingToDeduct);
         
         await client.query(
           'UPDATE stock SET quantity = quantity - $1 WHERE id = $2',
@@ -878,7 +951,7 @@ const checkoutOrder = async (req, res) => {
         remainingToDeduct -= deduct;
       }
 
-      if (remainingToDeduct > 0) {
+      if (remainingToDeduct > 0.0001) {
         throw new Error(`Critical error: stock levels shifted during processing for product ID: ${productId}`);
       }
     }

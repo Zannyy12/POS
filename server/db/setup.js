@@ -99,9 +99,25 @@ async function runSetup() {
     // Seed Categories
     const catRes = await client.query(`
       INSERT INTO categories (name) 
-      VALUES ('Electronics'), ('Grocery'), ('Beverages') 
+      VALUES ('Electronics'), ('Grocery'), ('Beverages'), ('Stone & Marble') 
       RETURNING id, name;
     `);
+    const marbleCatId = catRes.rows.find(c => c.name === 'Stone & Marble').id;
+
+    // Seed Products
+    const prodRes = await client.query(`
+      INSERT INTO products (name, price, cost, discount, barcode, category_id, quantity_limit)
+      VALUES 
+        ('Verona Marble Slab', 120.00, 70.00, 0.00, 'MARBLE-001', $1, 10),
+        ('Granite Black Pearl', 250.00, 150.00, 0.00, 'GRANITE-001', $1, 10),
+        ('Sunny Grey Stone', 95.00, 50.00, 0.00, 'STONE-001', $1, 10)
+      RETURNING id, name;
+    `, [marbleCatId]);
+
+    const veronaId = prodRes.rows.find(p => p.name === 'Verona Marble Slab').id;
+    const graniteId = prodRes.rows.find(p => p.name === 'Granite Black Pearl').id;
+    const sunnyId = prodRes.rows.find(p => p.name === 'Sunny Grey Stone').id;
+
     // Seed Customers (with 0.00 balance initially)
     await client.query(`
       INSERT INTO customers (name, phone, cnic, address, balance)
@@ -112,26 +128,48 @@ async function runSetup() {
     `);
 
     // Seed Vendors (with 0.00 balance initially)
-    await client.query(`
+    const vendorRes = await client.query(`
       INSERT INTO vendors (name, phone, address, balance)
       VALUES 
         ('Nestle Pakistan', '042-111-637853', 'Sheikhupura Road, Punjab', 0.00),
-        ('Unilever Pakistan', '021-111-864538', 'Avari Plaza, Karachi', 0.00)
+        ('Unilever Pakistan', '021-111-864538', 'Avari Plaza, Karachi', 0.00),
+        ('Khuzdar Stone Quarry', '0320-1234567', 'Quetta Road, Khuzdar', 0.00)
+      RETURNING id, name;
     `);
+    const vendorId = vendorRes.rows.find(v => v.name === 'Khuzdar Stone Quarry').id;
 
-    // Seed Banks (with 0.00 balance initially)
+    // Seed Stock (NUMERIC quantities)
+    await client.query(`
+      INSERT INTO stock (vendor_id, product_id, quantity, price, cost, barcode, location)
+      VALUES 
+        ($1, $2, 1000.0000, 120.00, 70.00, 'MARBLE-001', 'Shop'),
+        ($1, $3, 500.0000, 250.00, 150.00, 'GRANITE-001', 'Shop'),
+        ($1, $4, 2000.0000, 95.00, 50.00, 'STONE-001', 'Shop')
+    `, [vendorId, veronaId, graniteId, sunnyId]);
+
+    // Seed Banks (with balance initially)
     await client.query(`
       INSERT INTO banks (name, balance)
       VALUES 
-        ('Cash in Hand', 0.00),
-        ('Meezan Bank', 0.00),
-        ('HBL', 0.00)
+        ('Cash in Hand', 100000.00),
+        ('Meezan Bank', 250000.00),
+        ('HBL', 150000.00)
     `);
 
     // Seed Expense Types
     await client.query(`
       INSERT INTO expense_types (name)
       VALUES ('Rent'), ('Utility'), ('Salaries'), ('Miscellaneous')
+    `);
+
+    // Seed Shop Settings
+    await client.query(`
+      INSERT INTO settings (key, value)
+      VALUES 
+        ('shop_name', 'Khuzdar Marble & Granite'),
+        ('dealer_under', 'Authorized Stone Dealer'),
+        ('parent_company', 'Zannny Parent Stones Ltd.'),
+        ('shop_logo', '')
     `);
 
     // Seed Audit Logs

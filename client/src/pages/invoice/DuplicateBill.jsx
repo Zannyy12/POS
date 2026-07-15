@@ -46,8 +46,27 @@ const DuplicateBill = () => {
     }
   };
 
+  const [settings, setSettings] = useState({
+    shop_name: 'Khuzdar Marble & Granite',
+    dealer_under: 'Authorized Stone Dealer',
+    parent_company: 'Zannny Parent Stones Ltd.',
+    shop_logo: ''
+  });
+
+  const fetchSettings = async () => {
+    try {
+      const res = await axios.get('/api/settings');
+      if (res.data && Object.keys(res.data).length > 0) {
+        setSettings(prev => ({ ...prev, ...res.data }));
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   useEffect(() => {
     fetchOrders();
+    fetchSettings();
   }, [page, fromDate, toDate]);
 
   const handleSearchSubmit = (e) => {
@@ -63,14 +82,26 @@ const DuplicateBill = () => {
     setPage(1);
   };
 
-  const openReprintReceipt = (order) => {
-    setSelectedOrder(order);
-    setReceiptOpen(true);
+  const openReprintReceipt = async (order) => {
+    try {
+      const res = await axios.get(`/api/orders/${order.id}`);
+      setSelectedOrder({ ...res.data.order, items: res.data.items });
+      setReceiptOpen(true);
+    } catch (err) {
+      console.error(err);
+      addToast('Error loading invoice details', 'error');
+    }
   };
 
-  const openViewDetails = (order) => {
-    setSelectedOrder(order);
-    setViewDetailsOpen(true);
+  const openViewDetails = async (order) => {
+    try {
+      const res = await axios.get(`/api/orders/${order.id}`);
+      setSelectedOrder({ ...res.data.order, items: res.data.items });
+      setViewDetailsOpen(true);
+    } catch (err) {
+      console.error(err);
+      addToast('Error loading invoice details', 'error');
+    }
   };
 
   const handlePrint = useReactToPrint({
@@ -90,7 +121,15 @@ const DuplicateBill = () => {
       discount: parseFloat(selectedOrder.discount),
       total: parseFloat(selectedOrder.total_price),
       amount_paid: parseFloat(selectedOrder.amount_paid),
-      change: parseFloat(selectedOrder.amount_paid) - parseFloat(selectedOrder.total_price)
+      change: parseFloat(selectedOrder.amount_paid) - parseFloat(selectedOrder.total_price),
+      communicate_type: selectedOrder.communicate_type,
+      delivery_type: selectedOrder.delivery_type,
+      delivery_date: selectedOrder.delivery_date,
+      remarks: selectedOrder.remarks,
+      sale_person: selectedOrder.sale_person,
+      balance_due: selectedOrder.balance_due,
+      change_due: selectedOrder.change_due,
+      created_at: selectedOrder.created_at
     };
   };
 
@@ -250,31 +289,67 @@ const DuplicateBill = () => {
 
       {/* Reprint Thermal Receipt Modal */}
       {receiptOpen && selectedOrder && (
-        <div className="modal-overlay" onClick={() => setReceiptOpen(false)}>
-          <div className="modal-content" style={{ width: 'auto', maxWidth: '90mm', padding: '16px' }} onClick={(e) => e.stopPropagation()}>
-            <div className="flex-between" style={{ marginBottom: '16px' }}>
-              <h3>Reprint Invoice #{selectedOrder.id}</h3>
-              <button className="theme-toggle-btn" onClick={() => setReceiptOpen(false)} style={{ border: 'none' }}>
-                <X size={18} />
+        <div className="modal-overlay" style={{ zIndex: 1100 }} onClick={() => setReceiptOpen(false)}>
+          <div className="modal-content" style={{
+            width: '95vw',
+            height: '95vh',
+            maxWidth: '1200px',
+            display: 'flex',
+            flexDirection: 'column',
+            padding: 0,
+            overflow: 'hidden',
+            borderRadius: 'var(--radius-lg)'
+          }} onClick={(e) => e.stopPropagation()}>
+            <div className="flex-between" style={{
+              padding: '16px 24px',
+              borderBottom: '1px solid var(--border-color)',
+              backgroundColor: 'var(--bg-card)',
+              zIndex: 10
+            }}>
+              <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 600 }}>Reprint Invoice #{selectedOrder.id}</h3>
+              <button className="theme-toggle-btn" onClick={() => setReceiptOpen(false)} style={{ border: 'none', cursor: 'pointer', background: 'none' }}>
+                <X size={20} />
               </button>
             </div>
 
-            <div className="receipt-preview-box" style={{ border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', padding: '10px', backgroundColor: '#fff', maxHeight: '60vh', overflowY: 'auto' }}>
+            {/* Receipt Preview box */}
+            <div className="receipt-preview-box" style={{
+              border: '1px solid var(--border-color)',
+              borderRadius: 'var(--radius-sm)',
+              padding: '24px 10px',
+              backgroundColor: 'var(--bg-sidebar)',
+              flex: 1,
+              overflowY: 'auto',
+              overflowX: 'auto'
+            }}>
               <ReceiptPrintTemplate
                 ref={printRef}
                 order={getReceiptOrderData()}
                 items={selectedOrder.items || []}
-                customer={{ name: selectedOrder.customer_name }}
-                cashier="Reprint Service"
+                customer={{ 
+                  name: selectedOrder.customer_name, 
+                  phone: selectedOrder.customer_phone,
+                  balance: selectedOrder.current_customer_balance,
+                  customer_code: selectedOrder.customer_code || selectedOrder.customer_id
+                }}
+                cashier={selectedOrder.cashier_name || "Reprint Service"}
+                settings={settings}
               />
             </div>
 
-            <div className="flex" style={{ marginTop: '16px', gap: '10px' }}>
-              <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setReceiptOpen(false)}>
+            <div className="flex" style={{
+              padding: '16px 24px',
+              borderTop: '1px solid var(--border-color)',
+              backgroundColor: 'var(--bg-card)',
+              gap: '12px',
+              justifyContent: 'flex-end',
+              zIndex: 10
+            }}>
+              <button className="btn btn-secondary" style={{ minWidth: '120px', cursor: 'pointer' }} onClick={() => setReceiptOpen(false)}>
                 Close Panel
               </button>
-              <button className="btn btn-primary" style={{ flex: 1.5 }} onClick={handlePrint}>
-                <Printer size={16} />
+              <button className="btn btn-primary" style={{ minWidth: '160px', cursor: 'pointer' }} onClick={handlePrint}>
+                <Printer size={16} style={{ marginRight: '8px' }} />
                 Print Duplicate
               </button>
             </div>

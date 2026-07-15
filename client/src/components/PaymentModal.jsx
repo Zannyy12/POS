@@ -11,6 +11,11 @@ const PaymentModal = ({
   netTotal,
   customer,
   cartLocation,
+  communicate_type,
+  delivery_type,
+  remarks,
+  sale_person,
+  delivery_date,
   onSuccess
 }) => {
   const { user } = useAuthStore();
@@ -155,6 +160,11 @@ const PaymentModal = ({
       formData.append('bankId', selectedBank.id);
       formData.append('paymentNote', paymentNote);
       formData.append('cartLocation', cartLocation);
+      if (communicate_type) formData.append('communicate_type', communicate_type);
+      if (delivery_type) formData.append('delivery_type', delivery_type);
+      if (remarks) formData.append('remarks', remarks);
+      if (sale_person) formData.append('sale_person', sale_person);
+      if (delivery_date) formData.append('delivery_date', delivery_date);
       if (proofFile) formData.append('proof', proofFile);
 
       const res = await axios.post('/api/orders/checkout', formData, {

@@ -17,6 +17,7 @@ const orderRoutes = require('./routes/orders');
 const dashboardRoutes = require('./routes/dashboard');
 const reportRoutes = require('./routes/reports');
 const posRoutes = require('./routes/pos');
+const settingsRoutes = require('./routes/settings');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -51,6 +52,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/pos', posRoutes);   // No module-permission guard — needed by all cashiers
+app.use('/api/settings', settingsRoutes);
 
 // Base route / status check
 app.get('/', (req, res) => {

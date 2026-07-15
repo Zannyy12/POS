@@ -1,6 +1,8 @@
 -- Khuzdar POS Database Schema
 
 -- Drop tables if they exist (for easy reset/migration)
+DROP TABLE IF EXISTS settings CASCADE;
+DROP TABLE IF EXISTS order_item_cutting_lists CASCADE;
 DROP TABLE IF EXISTS audit_logs CASCADE;
 DROP TABLE IF EXISTS user_permissions CASCADE;
 DROP TABLE IF EXISTS bank_ledger CASCADE;
@@ -108,7 +110,7 @@ CREATE TABLE stock (
     id SERIAL PRIMARY KEY,
     vendor_id INT REFERENCES vendors(id) ON DELETE RESTRICT,
     product_id INT REFERENCES products(id) ON DELETE RESTRICT,
-    quantity INT NOT NULL DEFAULT 0,
+    quantity NUMERIC(15, 4) NOT NULL DEFAULT 0.0000,
     price NUMERIC(15, 2) NOT NULL DEFAULT 0.00,
     cost NUMERIC(15, 2) NOT NULL DEFAULT 0.00,
     barcode VARCHAR(100),
@@ -130,6 +132,11 @@ CREATE TABLE orders (
     payment_method_id INT REFERENCES banks(id) ON DELETE SET NULL,
     proof_of_payment VARCHAR(500),
     payment_note TEXT,
+    communicate_type VARCHAR(50),
+    delivery_type VARCHAR(50),
+    delivery_date TIMESTAMP,
+    remarks TEXT,
+    sale_person VARCHAR(100),
     status VARCHAR(50) DEFAULT 'completed', -- 'completed', 'refunded', 'partially_refunded'
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP NULL
@@ -141,7 +148,7 @@ CREATE TABLE order_items (
     order_id INT REFERENCES orders(id) ON DELETE CASCADE,
     product_id INT REFERENCES products(id) ON DELETE RESTRICT,
     unit_price NUMERIC(15, 2) NOT NULL DEFAULT 0.00,
-    quantity INT NOT NULL DEFAULT 1,
+    quantity NUMERIC(15, 4) NOT NULL DEFAULT 1.0000,
     discount NUMERIC(15, 2) NOT NULL DEFAULT 0.00,
     total_price NUMERIC(15, 2) NOT NULL DEFAULT 0.00,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -196,7 +203,7 @@ CREATE TABLE purchase_orders (
     id SERIAL PRIMARY KEY,
     vendor_id INT REFERENCES vendors(id) ON DELETE SET NULL,
     total_amount NUMERIC(15, 2) NOT NULL DEFAULT 0.00,
-    total_qty INT NOT NULL DEFAULT 0,
+    total_qty NUMERIC(15, 4) NOT NULL DEFAULT 0.0000,
     date DATE NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP NULL
@@ -208,7 +215,7 @@ CREATE TABLE purchase_order_items (
     purchase_order_id INT REFERENCES purchase_orders(id) ON DELETE CASCADE,
     product_id INT REFERENCES products(id) ON DELETE RESTRICT,
     cost NUMERIC(15, 2) NOT NULL DEFAULT 0.00,
-    quantity INT NOT NULL DEFAULT 1,
+    quantity NUMERIC(15, 4) NOT NULL DEFAULT 1.0000,
     amount NUMERIC(15, 2) NOT NULL DEFAULT 0.00,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP NULL
@@ -219,7 +226,7 @@ CREATE TABLE purchase_returns (
     id SERIAL PRIMARY KEY,
     vendor_id INT REFERENCES vendors(id) ON DELETE SET NULL,
     product_id INT REFERENCES products(id) ON DELETE SET NULL,
-    quantity INT NOT NULL DEFAULT 1,
+    quantity NUMERIC(15, 4) NOT NULL DEFAULT 1.0000,
     cost NUMERIC(15, 2) NOT NULL DEFAULT 0.00,
     amount NUMERIC(15, 2) NOT NULL DEFAULT 0.00,
     date DATE NOT NULL,
@@ -244,7 +251,7 @@ CREATE TABLE refund_items (
     id SERIAL PRIMARY KEY,
     refund_id INT REFERENCES refunds(id) ON DELETE CASCADE,
     product_id INT REFERENCES products(id) ON DELETE CASCADE,
-    quantity INT NOT NULL DEFAULT 1,
+    quantity NUMERIC(15, 4) NOT NULL DEFAULT 1.0000,
     unit_price NUMERIC(15, 2) NOT NULL DEFAULT 0.00,
     total NUMERIC(15, 2) NOT NULL DEFAULT 0.00,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -295,3 +302,32 @@ CREATE INDEX idx_orders_created_at ON orders(created_at);
 CREATE INDEX idx_stock_product_id ON stock(product_id);
 CREATE INDEX idx_order_items_order_id ON order_items(order_id);
 CREATE INDEX idx_customers_phone ON customers(phone);
+
+-- Dynamic Shop Settings
+CREATE TABLE settings (
+    key VARCHAR(100) PRIMARY KEY,
+    value TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Cutting list rows for order items (marble & granite shop specific)
+CREATE TABLE order_item_cutting_lists (
+    id SERIAL PRIMARY KEY,
+    order_item_id INT REFERENCES order_items(id) ON DELETE CASCADE,
+    demand_w NUMERIC(10, 2) NOT NULL,
+    demand_l NUMERIC(10, 2) NOT NULL,
+    demand_uom VARCHAR(10) NOT NULL, -- 'in' or 'cm'
+    demand_qty NUMERIC(10, 2) NOT NULL,
+    demand_sqft NUMERIC(10, 4) NOT NULL,
+    demand_description VARCHAR(255),
+    billing_w NUMERIC(10, 2) NOT NULL,
+    billing_l NUMERIC(10, 2) NOT NULL,
+    billing_uom VARCHAR(10) NOT NULL, -- 'in' or 'cm'
+    billing_qty NUMERIC(10, 2) NOT NULL,
+    billing_sqft NUMERIC(10, 4) NOT NULL, -- independently editable
+    billing_detail VARCHAR(255),
+    wastage_diff NUMERIC(10, 4) NOT NULL
+);
+
+CREATE INDEX idx_cutting_lists_order_item_id ON order_item_cutting_lists(order_item_id);
