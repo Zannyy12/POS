@@ -6,13 +6,11 @@ const getCustomers = async (req, res) => {
   const limit = parseInt(req.query.limit || '10');
   const offset = (page - 1) * limit;
   const search = req.query.search || '';
-  const salesmanId = req.query.salesman_id || '';
 
   try {
     let queryStr = `
-      SELECT c.*, s.name AS salesman_name 
+      SELECT c.* 
       FROM customers c
-      LEFT JOIN salesmen s ON c.salesman_id = s.id
       WHERE c.deleted_at IS NULL
     `;
     const params = [];
@@ -24,19 +22,22 @@ const getCustomers = async (req, res) => {
       paramCounter++;
     }
 
-    if (salesmanId) {
-      queryStr += ` AND c.salesman_id = $${paramCounter}`;
-      params.push(parseInt(salesmanId));
-      paramCounter++;
-    }
-
     // Get count for pagination
     const countRes = await query(`SELECT COUNT(*) FROM (${queryStr}) AS temp`, params);
     const totalItems = parseInt(countRes.rows[0].count);
 
     // Get total outstanding market balance
-    const totalBalanceRes = await query(`SELECT SUM(balance) AS total FROM customers WHERE deleted_at IS NULL`);
-    const totalMarketBalance = parseFloat(totalBalanceRes.rows[0].total || 0);
+    // const totalBalanceRes = await query(`SELECT SUM(balance) AS total FROM customers WHERE deleted_at IS NULL`);
+    // const totalMarketBalance = parseFloat(totalBalanceRes.rows[0].total || 0);
+    // Get total outstanding market balance (Only Positive Outstanding)
+const totalBalanceRes = await query(`
+    SELECT COALESCE(SUM(balance), 0) AS total
+    FROM customers
+    WHERE deleted_at IS NULL
+      AND balance > 0
+`);
+
+const totalMarketBalance = Number(totalBalanceRes.rows[0].total) || 0;
 
     queryStr += ` ORDER BY c.id DESC LIMIT $${paramCounter} OFFSET $${paramCounter + 1}`;
     params.push(limit, offset);
@@ -61,7 +62,7 @@ const getCustomers = async (req, res) => {
 
 // Create customer
 const createCustomer = async (req, res) => {
-  const { name, phone, cnic, address, balance, salesman_id } = req.body;
+  const { name, phone, cnic, address, balance } = req.body;
 
   if (!name) {
     return res.status(400).json({ message: 'Customer name is required' });
@@ -69,16 +70,15 @@ const createCustomer = async (req, res) => {
 
   try {
     const insertRes = await query(
-      `INSERT INTO customers (name, phone, cnic, address, balance, salesman_id)
-       VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO customers (name, phone, cnic, address, balance)
+       VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
       [
         name,
         phone || null,
         cnic || null,
         address || null,
-        parseFloat(balance || 0),
-        salesman_id ? parseInt(salesman_id) : null
+        parseFloat(balance || 0)
       ]
     );
 
@@ -99,7 +99,7 @@ const createCustomer = async (req, res) => {
 // Update customer
 const updateCustomer = async (req, res) => {
   const { id } = req.params;
-  const { name, phone, cnic, address, balance, salesman_id } = req.body;
+  const { name, phone, cnic, address, balance } = req.body;
 
   try {
     const checkRes = await query('SELECT * FROM customers WHERE id = $1 AND deleted_at IS NULL', [id]);
@@ -108,15 +108,14 @@ const updateCustomer = async (req, res) => {
 
     const updateRes = await query(
       `UPDATE customers 
-       SET name = $1, phone = $2, cnic = $3, address = $4, balance = $5, salesman_id = $6
-       WHERE id = $7 RETURNING *`,
+       SET name = $1, phone = $2, cnic = $3, address = $4, balance = $5
+       WHERE id = $6 RETURNING *`,
       [
         name || oldCust.name,
         phone !== undefined ? phone : oldCust.phone,
         cnic !== undefined ? cnic : oldCust.cnic,
         address !== undefined ? address : oldCust.address,
         balance !== undefined ? parseFloat(balance) : oldCust.balance,
-        salesman_id !== undefined ? (salesman_id ? parseInt(salesman_id) : null) : oldCust.salesman_id,
         id
       ]
     );

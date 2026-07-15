@@ -531,15 +531,14 @@ const refundOrder = async (req, res) => {
   }
 };
 const getSalesLedgerReport = async (req, res) => {
-  const { search, salesman_id, from_date, to_date, sort_field, sort_order } = req.query;
+  const { search, from_date, to_date, sort_field, sort_order } = req.query;
 
   try {
     let queryStr = `
       SELECT o.id, o.created_at AS date, o.created_at, o.total_price AS total, o.total_price, o.amount_paid, o.discount, o.balance_due,
-             c.name AS customer_name, s.name AS salesman_name
+             c.name AS customer_name
       FROM orders o
       JOIN customers c ON o.customer_id = c.id
-      LEFT JOIN salesmen s ON c.salesman_id = s.id
       WHERE o.deleted_at IS NULL
     `;
     const params = [];
@@ -557,11 +556,7 @@ const getSalesLedgerReport = async (req, res) => {
       paramCounter++;
     }
 
-    if (salesman_id) {
-      queryStr += ` AND c.salesman_id = $${paramCounter}`;
-      params.push(parseInt(salesman_id));
-      paramCounter++;
-    }
+
 
     if (search) {
       queryStr += ` AND (c.name ILIKE $${paramCounter} OR CAST(o.id AS TEXT) ILIKE $${paramCounter})`;

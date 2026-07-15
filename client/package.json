@@ -1,5 +1,5 @@
 {
-  "name": "client",
+  "name": "khuzdarpos-client",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -10,19 +10,15 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@hookform/resolvers": "^5.4.0",
-    "@tanstack/react-table": "^8.21.3",
     "axios": "^1.18.0",
     "jsbarcode": "^3.12.3",
     "lucide-react": "^1.21.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
-    "react-hook-form": "^7.80.0",
     "react-router-dom": "^7.18.0",
     "react-to-print": "^3.3.0",
     "recharts": "^3.8.1",
     "xlsx": "^0.18.5",
-    "zod": "^4.4.3",
     "zustand": "^5.0.14"
   },
   "devDependencies": {

@@ -19,7 +19,6 @@ DROP TABLE IF EXISTS stock CASCADE;
 DROP TABLE IF EXISTS banks CASCADE;
 DROP TABLE IF EXISTS vendors CASCADE;
 DROP TABLE IF EXISTS customers CASCADE;
-DROP TABLE IF EXISTS salesmen CASCADE;
 DROP TABLE IF EXISTS products CASCADE;
 DROP TABLE IF EXISTS categories CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
@@ -72,15 +71,6 @@ CREATE TABLE products (
 );
 
 -- 4. Salesmen
-CREATE TABLE salesmen (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    phone VARCHAR(20),
-    address TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    deleted_at TIMESTAMP NULL
-);
-
 -- 5. Customers
 CREATE TABLE customers (
     id SERIAL PRIMARY KEY,
@@ -89,7 +79,6 @@ CREATE TABLE customers (
     cnic VARCHAR(20),
     address TEXT,
     balance NUMERIC(15, 2) NOT NULL DEFAULT 0.00,
-    salesman_id INT REFERENCES salesmen(id) ON DELETE SET NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP NULL
 );
@@ -123,7 +112,7 @@ CREATE TABLE stock (
     price NUMERIC(15, 2) NOT NULL DEFAULT 0.00,
     cost NUMERIC(15, 2) NOT NULL DEFAULT 0.00,
     barcode VARCHAR(100),
-    location VARCHAR(100) NOT NULL, -- e.g. 'Shop', 'Store 1'
+    location VARCHAR(100) NOT NULL, -- e.g. 'Shop'
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP NULL
 );
@@ -137,6 +126,10 @@ CREATE TABLE orders (
     amount_paid NUMERIC(15, 2) NOT NULL DEFAULT 0.00,
     discount NUMERIC(15, 2) NOT NULL DEFAULT 0.00,
     balance_due NUMERIC(15, 2) NOT NULL DEFAULT 0.00,
+    change_due NUMERIC(15, 2) DEFAULT 0.00,
+    payment_method_id INT REFERENCES banks(id) ON DELETE SET NULL,
+    proof_of_payment VARCHAR(500),
+    payment_note TEXT,
     status VARCHAR(50) DEFAULT 'completed', -- 'completed', 'refunded', 'partially_refunded'
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP NULL

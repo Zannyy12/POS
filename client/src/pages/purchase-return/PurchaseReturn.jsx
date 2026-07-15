@@ -40,7 +40,7 @@ const PurchaseReturn = () => {
   const handleProductChange = (e) => {
     const pId = e.target.value;
     setProductId(pId);
-    
+
     // Auto fill cost
     const match = products.find(p => p.id === parseInt(pId));
     if (match) {
@@ -103,9 +103,9 @@ const PurchaseReturn = () => {
           <form onSubmit={handleSubmit} className="return-form">
             <div className="form-group">
               <label className="form-label">Select Supplier / Vendor *</label>
-              <select 
-                className="form-input" 
-                value={vendorId} 
+              <select
+                className="form-input"
+                value={vendorId}
                 onChange={(e) => setVendorId(e.target.value)}
                 required
               >
@@ -118,9 +118,9 @@ const PurchaseReturn = () => {
 
             <div className="form-group">
               <label className="form-label">Select Product *</label>
-              <select 
-                className="form-input" 
-                value={productId} 
+              <select
+                className="form-input"
+                value={productId}
                 onChange={handleProductChange}
                 required
               >
@@ -134,9 +134,9 @@ const PurchaseReturn = () => {
             <div className="grid grid-2">
               <div className="form-group">
                 <label className="form-label">Return Location *</label>
-                <select 
-                  className="form-input" 
-                  value={location} 
+                <select
+                  className="form-input"
+                  value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   required
                 >
@@ -147,12 +147,12 @@ const PurchaseReturn = () => {
 
               <div className="form-group">
                 <label className="form-label">Return Date</label>
-                <input 
-                  type="date" 
-                  className="form-input" 
-                  value={date} 
+                <input
+                  type="date"
+                  className="form-input"
+                  value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  required 
+                  required
                 />
               </div>
             </div>
@@ -160,33 +160,33 @@ const PurchaseReturn = () => {
             <div className="grid grid-2">
               <div className="form-group">
                 <label className="form-label">Return Quantity *</label>
-                <input 
-                  type="number" 
-                  className="form-input" 
-                  value={quantity} 
+                <input
+                  type="number"
+                  className="form-input"
+                  value={quantity}
                   onChange={(e) => setQuantity(e.target.value)}
                   placeholder="0"
-                  required 
+                  required
                 />
               </div>
 
               <div className="form-group">
                 <label className="form-label">Return Unit Cost (PKR) *</label>
-                <input 
-                  type="number" 
-                  step="0.01" 
-                  className="form-input" 
-                  value={cost} 
+                <input
+                  type="number"
+                  step="0.01"
+                  className="form-input"
+                  value={cost}
                   onChange={(e) => setCost(e.target.value)}
                   placeholder="0.00"
-                  required 
+                  required
                 />
               </div>
             </div>
 
-            <button 
-              type="submit" 
-              className="btn btn-primary" 
+            <button
+              type="submit"
+              className="btn btn-primary"
               style={{ width: '100%', marginTop: '16px', borderRadius: 'var(--radius-md)' }}
               disabled={loading}
             >

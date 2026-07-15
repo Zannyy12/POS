@@ -187,6 +187,38 @@ const Vendors = () => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'PKR' }).format(val);
   };
 
+  const renderBalance = (balance) => {
+    const value = parseFloat(balance) || 0;
+    const formattedAmount = Math.abs(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    if (value < 0) {
+      return (
+        <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+          <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#2563eb' }}>Advance Paid</span>
+          <span style={{ color: '#2563eb', fontWeight: 700, fontSize: '14px' }}>PKR {formattedAmount}</span>
+        </div>
+      );
+    }
+
+    if (value > 0) {
+      return (
+        <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+          <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#dc2626' }}>Payable</span>
+          <span style={{ color: '#dc2626', fontWeight: 700, fontSize: '14px' }}>PKR {formattedAmount}</span>
+        </div>
+      );
+    }
+
+    return (
+      <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+        <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#16a34a' }}>Settled</span>
+        <span style={{ color: '#16a34a', fontWeight: 700, fontSize: '14px' }}>PKR 0.00</span>
+      </div>
+    );
+  };
+
+  const vendorPayableTotal = Math.max(0, Number(meta.totalVendorBalance) || 0);
+
   return (
     <div className="vendors-page">
       {/* Header Row */}
@@ -208,7 +240,7 @@ const Vendors = () => {
           <div>
             <h3 style={{ color: 'var(--text-muted)', fontSize: '14px', fontWeight: 500 }}>Total Outstanding Vendor Payables</h3>
             <h2 style={{ fontSize: '28px', color: 'var(--danger)', fontWeight: 700, marginTop: '4px' }}>
-              {formatCurrency(meta.totalVendorBalance)}
+              {formatCurrency(vendorPayableTotal)}
             </h2>
           </div>
           <div className="alert-icon-wrapper danger-bg">
@@ -257,7 +289,7 @@ const Vendors = () => {
                 <th>Supplier Name</th>
                 <th>Phone</th>
                 <th>Address</th>
-                <th style={{ textAlign: 'right' }}>Outstanding Debt</th>
+                <th style={{ textAlign: 'right' }}>Vendor Balance</th>
                 <th style={{ textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
@@ -268,8 +300,8 @@ const Vendors = () => {
                   <td style={{ fontWeight: 600 }}>{v.name}</td>
                   <td>{v.phone || 'N/A'}</td>
                   <td>{v.address || 'N/A'}</td>
-                  <td style={{ textAlign: 'right', fontWeight: 700, color: parseFloat(v.balance) > 0 ? 'var(--danger)' : 'var(--success)' }}>
-                    {formatCurrency(v.balance)}
+                  <td style={{ textAlign: 'right', fontWeight: 700 }}>
+                    {renderBalance(v.balance)}
                   </td>
                   <td style={{ textAlign: 'right' }}>
                     <div className="flex" style={{ justifyContent: 'flex-end', gap: '8px' }}>

@@ -41,7 +41,6 @@ const UserManagement = () => {
     { key: 'products', label: 'Products Profile' },
     { key: 'categories', label: 'Product Categories' },
     { key: 'customers', label: 'Customer Management' },
-    { key: 'salesman', label: 'Salesman Management' },
     { key: 'vendors', label: 'Vendor Management' },
     { key: 'stock', label: 'Stock / Purchase Adjustments' },
     { key: 'purchase-return', label: 'Purchase Returns' },

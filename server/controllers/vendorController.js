@@ -19,8 +19,17 @@ const getVendors = async (req, res) => {
     }
 
     // Total outstanding balance
-    const totalBalanceRes = await query('SELECT SUM(balance) AS total FROM vendors WHERE deleted_at IS NULL');
-    const totalVendorBalance = parseFloat(totalBalanceRes.rows[0].total || 0);
+    // const totalBalanceRes = await query('SELECT SUM(balance) AS total FROM vendors WHERE deleted_at IS NULL');
+    // const totalVendorBalance = parseFloat(totalBalanceRes.rows[0].total || 0);
+    // Total Outstanding Vendor Payables (Only Positive Balances)
+const totalBalanceRes = await query(`
+    SELECT COALESCE(SUM(balance), 0) AS total
+    FROM vendors
+    WHERE deleted_at IS NULL
+      AND balance > 0
+`);
+
+const totalVendorBalance = Number(totalBalanceRes.rows[0].total) || 0;
 
     const countRes = await query(`SELECT COUNT(*) FROM (${queryStr}) AS temp`, params);
     const totalItems = parseInt(countRes.rows[0].count);

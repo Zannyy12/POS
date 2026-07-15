@@ -49,6 +49,124 @@ const Dashboard = () => {
     }).format(val);
   };
 
+  const getBalanceDisplay = (value, type) => {
+    const numericValue = Number(value) || 0;
+    const absoluteValue = Math.abs(numericValue);
+
+    if (type === 'receivable') {
+      if (numericValue > 0) {
+        return {
+          status: 'Outstanding',
+          value: formatCurrency(numericValue),
+          color: '#dc2626'
+        };
+      }
+
+      if (numericValue < 0) {
+        return {
+          status: 'Advance Received',
+          value: formatCurrency(absoluteValue),
+          color: '#2563eb'
+        };
+      }
+
+      return {
+        status: 'Settled',
+        value: formatCurrency(0),
+        color: '#16a34a'
+      };
+    }
+
+    if (type === 'payable') {
+      if (numericValue > 0) {
+        return {
+          status: 'Payable',
+          value: formatCurrency(numericValue),
+          color: '#dc2626'
+        };
+      }
+
+      if (numericValue < 0) {
+        return {
+          status: 'Advance Paid',
+          value: formatCurrency(absoluteValue),
+          color: '#2563eb'
+        };
+      }
+
+      return {
+        status: 'Settled',
+        value: formatCurrency(0),
+        color: '#16a34a'
+      };
+    }
+
+    return {
+      status: '',
+      value: formatCurrency(numericValue),
+      color: 'var(--text-main)'
+    };
+  };
+
+  const getFinancialCardDisplay = (value, type) => {
+    const numericValue = Number(value) || 0;
+    const absoluteValue = Math.abs(numericValue);
+
+    if (type === 'receivable') {
+      if (numericValue > 0) {
+        return {
+          status: 'Outstanding',
+          value: formatCurrency(numericValue),
+          color: '#dc2626'
+        };
+      }
+
+      if (numericValue < 0) {
+        return {
+          status: 'Advance Received',
+          value: formatCurrency(absoluteValue),
+          color: '#2563eb'
+        };
+      }
+
+      return {
+        status: 'Settled',
+        value: formatCurrency(0),
+        color: '#16a34a'
+      };
+    }
+
+    if (type === 'payable') {
+      if (numericValue > 0) {
+        return {
+          status: 'Outstanding',
+          value: formatCurrency(numericValue),
+          color: '#dc2626'
+        };
+      }
+
+      if (numericValue < 0) {
+        return {
+          status: 'Advance Paid',
+          value: formatCurrency(absoluteValue),
+          color: '#2563eb'
+        };
+      }
+
+      return {
+        status: 'Settled',
+        value: formatCurrency(0),
+        color: '#16a34a'
+      };
+    }
+
+    return {
+      status: '',
+      value: formatCurrency(numericValue),
+      color: 'var(--text-main)'
+    };
+  };
+
   if (loading) {
     return (
       <div className="flex-center" style={{ height: '70vh', flexDirection: 'column' }}>
@@ -64,8 +182,8 @@ const Dashboard = () => {
     { title: "Today's Purchases", value: stats?.todayPurchases || 0, icon: ShoppingBag, color: 'var(--info)', isCurrency: true },
     { title: "Today's Invoices", value: stats?.todayInvoices || 0, icon: RefreshCw, color: 'var(--success)', isCurrency: false },
     { title: "Today's Recovery", value: stats?.recovery || 0, icon: ArrowDownRight, color: 'var(--success)', isCurrency: true },
-    { title: "Market Receivables", value: stats?.customerBalanceTotal || 0, icon: Users, color: 'var(--warning)', isCurrency: true },
-    { title: "Vendor Payables", value: stats?.vendorBalanceTotal || 0, icon: Landmark, color: 'var(--danger)', isCurrency: true },
+    { title: "Market Receivables", value: stats?.customerBalanceTotal || 0, icon: Users, color: 'var(--warning)', isCurrency: true, cardType: 'receivable' },
+    { title: "Vendor Payables", value: stats?.vendorBalanceTotal || 0, icon: Landmark, color: 'var(--danger)', isCurrency: true, cardType: 'payable' },
     { title: "Active Staff Profiles", value: stats?.activeUsers || 0, icon: Users, color: 'var(--primary)', isCurrency: false },
   ];
 
@@ -91,7 +209,14 @@ const Dashboard = () => {
           </div>
           <div>
             <h3>Low Stock Products</h3>
-            <p className="alert-count">{stats?.shortStockCount} items under limits</p>
+            <p className="alert-count">
+              {(() => {
+                const count = Number(stats?.shortStockCount) || 0;
+                if (count === 0) return '0 Low Stock Products';
+                if (count === 1) return '1 Low Stock Product';
+                return `${count} Low Stock Products`;
+              })()}
+            </p>
           </div>
         </div>
 
@@ -101,7 +226,14 @@ const Dashboard = () => {
           </div>
           <div>
             <h3>Out of Stock Products</h3>
-            <p className="alert-count red-count">{stats?.outOfStockCount} items empty</p>
+            <p className="alert-count red-count">
+              {(() => {
+                const count = Number(stats?.outOfStockCount) || 0;
+                if (count === 0) return 'No Products Out of Stock';
+                if (count === 1) return '1 Product Out of Stock';
+                return `${count} Products Out of Stock`;
+              })()}
+            </p>
           </div>
         </div>
       </div>
@@ -110,6 +242,7 @@ const Dashboard = () => {
       <div className="grid grid-4 stats-grid">
         {statCards.map((card, idx) => {
           const Icon = card.icon;
+          const display = card.cardType ? getFinancialCardDisplay(card.value, card.cardType) : null;
           return (
             <div key={idx} className="glass-card stat-card interactive">
               <div className="stat-icon-container" style={{ backgroundColor: `${card.color}15`, color: card.color }}>
@@ -117,9 +250,20 @@ const Dashboard = () => {
               </div>
               <div className="stat-content">
                 <span className="stat-title">{card.title}</span>
-                <span className="stat-value">
-                  {card.isCurrency ? formatCurrency(card.value) : card.value}
-                </span>
+                {display ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: display.color }}>
+                      {display.status}
+                    </span>
+                    <span className="stat-value" style={{ color: display.color }}>
+                      {display.value}
+                    </span>
+                  </div>
+                ) : (
+                  <span className="stat-value">
+                    {card.isCurrency ? formatCurrency(card.value) : card.value}
+                  </span>
+                )}
               </div>
             </div>
           );
@@ -223,19 +367,27 @@ const Dashboard = () => {
                 <tr>
                   <th>Customer Name</th>
                   <th style={{ textAlign: 'right' }}>Total Spent</th>
-                  <th style={{ textAlign: 'right' }}>Outstanding</th>
+                  <th style={{ textAlign: 'right' }}>Customer Balance</th>
                 </tr>
               </thead>
               <tbody>
-                {stats?.topCustomers?.map((c, i) => (
-                  <tr key={i}>
-                    <td>{c.name}</td>
-                    <td style={{ textAlign: 'right', fontWeight: 600 }}>{formatCurrency(c.total_spent)}</td>
-                    <td style={{ textAlign: 'right', color: parseFloat(c.balance) < 0 ? 'var(--success)' : 'var(--danger)', fontWeight: 500 }}>
-                      {formatCurrency(c.balance)}
-                    </td>
-                  </tr>
-                ))}
+                {stats?.topCustomers?.map((c, i) => {
+                  const balanceDisplay = getBalanceDisplay(c.balance, 'receivable');
+                  return (
+                    <tr key={i}>
+                      <td>{c.name}</td>
+                      <td style={{ textAlign: 'right', fontWeight: 600 }}>{formatCurrency(c.total_spent)}</td>
+                      <td style={{ textAlign: 'right', fontWeight: 600 }}>
+                        <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: balanceDisplay.color }}>
+                            {balanceDisplay.status}
+                          </span>
+                          <span style={{ color: balanceDisplay.color, fontSize: '13px' }}>{balanceDisplay.value}</span>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -250,19 +402,27 @@ const Dashboard = () => {
                 <tr>
                   <th>Vendor Name</th>
                   <th style={{ textAlign: 'right' }}>Purchased Value</th>
-                  <th style={{ textAlign: 'right' }}>Our Balance</th>
+                  <th style={{ textAlign: 'right' }}>Vendor Balance</th>
                 </tr>
               </thead>
               <tbody>
-                {stats?.topVendors?.map((v, i) => (
-                  <tr key={i}>
-                    <td>{v.name}</td>
-                    <td style={{ textAlign: 'right', fontWeight: 600 }}>{formatCurrency(v.total_purchased)}</td>
-                    <td style={{ textAlign: 'right', color: parseFloat(v.balance) < 0 ? 'var(--success)' : 'var(--danger)', fontWeight: 500 }}>
-                      {formatCurrency(v.balance)}
-                    </td>
-                  </tr>
-                ))}
+                {stats?.topVendors?.map((v, i) => {
+                  const balanceDisplay = getBalanceDisplay(v.balance, 'payable');
+                  return (
+                    <tr key={i}>
+                      <td>{v.name}</td>
+                      <td style={{ textAlign: 'right', fontWeight: 600 }}>{formatCurrency(v.total_purchased)}</td>
+                      <td style={{ textAlign: 'right', fontWeight: 600 }}>
+                        <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: balanceDisplay.color }}>
+                            {balanceDisplay.status}
+                          </span>
+                          <span style={{ color: balanceDisplay.color, fontSize: '13px' }}>{balanceDisplay.value}</span>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

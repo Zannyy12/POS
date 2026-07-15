@@ -37,12 +37,6 @@ const Login = () => {
     }
   };
 
-  // Helper autofills for testing convenience
-  const autofillUser = (selectedRole) => {
-    setRole(selectedRole);
-    setUsername(selectedRole.toLowerCase());
-    setPassword('1234');
-  };
 
   return (
     <div className="login-page">
@@ -113,18 +107,6 @@ const Login = () => {
           </button>
         </form>
 
-        <div className="quick-access-panel">
-          <span className="quick-label">Quick Access:</span>
-          <div className="quick-buttons">
-            <button onClick={() => autofillUser('Admin')} className="btn btn-secondary btn-sm">Admin</button>
-            <button onClick={() => autofillUser('Cashier')} className="btn btn-secondary btn-sm">Cashier</button>
-          </div>
-        </div>
-
-        <div className="login-footer">
-          <p>Designed and Developed By Zain Bashir</p>
-          <p className="contact-info">Contact/Whatsapp: +92 320 0256793</p>
-        </div>
       </div>
 
       <style>{`
@@ -226,39 +208,6 @@ const Login = () => {
           border-radius: var(--radius-md);
         }
 
-        .quick-access-panel {
-          border-top: 1px solid var(--border-color);
-          padding-top: 20px;
-          margin-top: 10px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-        }
-
-        .quick-label {
-          font-size: 13px;
-          color: var(--text-muted);
-          font-weight: 500;
-        }
-
-        .quick-buttons {
-          display: flex;
-          gap: 10px;
-        }
-
-        .login-footer {
-          text-align: center;
-          margin-top: 32px;
-          font-size: 11px;
-          color: var(--text-muted);
-          line-height: 1.6;
-        }
-
-        .contact-info {
-          font-weight: 500;
-          color: var(--primary);
-          margin-top: 4px;
-        }
       `}</style>
     </div>
   );

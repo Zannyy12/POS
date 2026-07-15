@@ -12,7 +12,6 @@ import Invoice from './pages/invoice/Invoice';
 import DuplicateBill from './pages/invoice/DuplicateBill';
 import Products from './pages/products/Products';
 import Customers from './pages/customers/Customers';
-import Salesman from './pages/salesman/Salesman';
 import Vendors from './pages/vendors/Vendors';
 import Stock from './pages/stock/Stock';
 import PurchaseReturn from './pages/purchase-return/PurchaseReturn';
@@ -150,11 +149,7 @@ function App() {
           </PermissionRoute>
         } />
 
-        <Route path="/salesman" element={
-          <PermissionRoute permModule="salesman">
-            <Salesman />
-          </PermissionRoute>
-        } />
+
 
         <Route path="/vendors" element={
           <PermissionRoute permModule="vendors">

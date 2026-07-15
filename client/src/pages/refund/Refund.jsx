@@ -40,7 +40,7 @@ const Refund = () => {
   const handleProductChange = (e) => {
     const pId = e.target.value;
     setProductId(pId);
-    
+
     // Auto fill retail price
     const match = products.find(p => p.id === parseInt(pId));
     if (match) {
@@ -103,9 +103,9 @@ const Refund = () => {
           <form onSubmit={handleSubmit} className="refund-form">
             <div className="form-group">
               <label className="form-label">Select Customer / Client *</label>
-              <select 
-                className="form-input" 
-                value={customerId} 
+              <select
+                className="form-input"
+                value={customerId}
                 onChange={(e) => setCustomerId(e.target.value)}
                 required
               >
@@ -118,9 +118,9 @@ const Refund = () => {
 
             <div className="form-group">
               <label className="form-label">Select Product *</label>
-              <select 
-                className="form-input" 
-                value={productId} 
+              <select
+                className="form-input"
+                value={productId}
                 onChange={handleProductChange}
                 required
               >
@@ -134,9 +134,9 @@ const Refund = () => {
             <div className="grid grid-2">
               <div className="form-group">
                 <label className="form-label">Restock Location *</label>
-                <select 
-                  className="form-input" 
-                  value={location} 
+                <select
+                  className="form-input"
+                  value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   required
                 >
@@ -147,12 +147,12 @@ const Refund = () => {
 
               <div className="form-group">
                 <label className="form-label">Return Date</label>
-                <input 
-                  type="date" 
-                  className="form-input" 
-                  value={date} 
+                <input
+                  type="date"
+                  className="form-input"
+                  value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  required 
+                  required
                 />
               </div>
             </div>
@@ -160,33 +160,33 @@ const Refund = () => {
             <div className="grid grid-2">
               <div className="form-group">
                 <label className="form-label">Returned Quantity *</label>
-                <input 
-                  type="number" 
-                  className="form-input" 
-                  value={quantity} 
+                <input
+                  type="number"
+                  className="form-input"
+                  value={quantity}
                   onChange={(e) => setQuantity(e.target.value)}
                   placeholder="0"
-                  required 
+                  required
                 />
               </div>
 
               <div className="form-group">
                 <label className="form-label">Refund Unit Retail Price (PKR) *</label>
-                <input 
-                  type="number" 
-                  step="0.01" 
-                  className="form-input" 
-                  value={price} 
+                <input
+                  type="number"
+                  step="0.01"
+                  className="form-input"
+                  value={price}
                   onChange={(e) => setPrice(e.target.value)}
                   placeholder="0.00"
-                  required 
+                  required
                 />
               </div>
             </div>
 
-            <button 
-              type="submit" 
-              className="btn btn-primary" 
+            <button
+              type="submit"
+              className="btn btn-primary"
               style={{ width: '100%', marginTop: '16px', borderRadius: 'var(--radius-md)' }}
               disabled={loading}
             >

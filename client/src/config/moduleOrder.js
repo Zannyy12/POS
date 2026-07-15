@@ -13,6 +13,5 @@ export const MODULE_ORDER = [
   { module: 'Itemwise Refund',  path: '/refund',           permModule: 'refund' },
   { module: 'Banks',            path: '/banks',            permModule: 'banks' },
   { module: 'Purchase Return',  path: '/purchase-return',  permModule: 'purchase-return' },
-  { module: 'Salesman',         path: '/salesman',         permModule: 'salesman' },
   { module: 'Administration',   path: '/admin',            permModule: 'users' },
 ];

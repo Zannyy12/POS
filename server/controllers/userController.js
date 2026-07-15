@@ -70,7 +70,7 @@ const createUser = async (req, res) => {
     const modules = [
       'dashboard', 'users', 'products', 'categories', 'customers', 
       'vendors', 'stock', 'expenses', 'invoice', 'duplicate-bill', 
-      'sales-view', 'refund', 'banks', 'salesman'
+      'sales-view', 'refund', 'banks'
     ];
 
     for (const mod of modules) {

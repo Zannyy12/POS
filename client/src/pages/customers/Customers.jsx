@@ -7,7 +7,6 @@ import DeleteConfirmModal from '../../components/DeleteConfirmModal';
 
 const Customers = () => {
   const [customers, setCustomers] = useState([]);
-  const [salesmen, setSalesmen] = useState([]);
   const [banks, setBanks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [meta, setMeta] = useState({ currentPage: 1, totalPages: 1, totalMarketBalance: 0 });
@@ -27,7 +26,6 @@ const Customers = () => {
 
   // Filters
   const [search, setSearch] = useState('');
-  const [salesmanFilter, setSalesmanFilter] = useState('');
   const [page, setPage] = useState(1);
 
   // Modals & Drawers
@@ -42,7 +40,6 @@ const Customers = () => {
   const [custCnic, setCustCnic] = useState('');
   const [custAddress, setCustAddress] = useState('');
   const [custBalance, setCustBalance] = useState('0.00');
-  const [custSalesmanId, setCustSalesmanId] = useState('');
 
   // Payment Form states
   const [payBankId, setPayBankId] = useState('');
@@ -55,15 +52,6 @@ const Customers = () => {
   const [loadingLedger, setLoadingLedger] = useState(false);
 
   const { addToast } = useAuthStore();
-
-  const fetchSalesmen = async () => {
-    try {
-      const res = await axios.get('/api/salesman', { params: { limit: 100 } });
-      setSalesmen(res.data.data || []);
-    } catch (err) {
-      console.error(err);
-    }
-  };
 
   const fetchBanks = async () => {
     try {
@@ -81,7 +69,6 @@ const Customers = () => {
         params: {
           page,
           search,
-          salesman_id: salesmanFilter,
           limit: 10
         }
       });
@@ -96,13 +83,12 @@ const Customers = () => {
   };
 
   useEffect(() => {
-    fetchSalesmen();
     fetchBanks();
   }, []);
 
   useEffect(() => {
     fetchCustomers();
-  }, [page, search, salesmanFilter]);
+  }, [page, search]);
 
   const openAddModal = () => {
     setSelectedCustomer(null);
@@ -111,7 +97,6 @@ const Customers = () => {
     setCustCnic('');
     setCustAddress('');
     setCustBalance('0.00');
-    setCustSalesmanId(salesmen[0]?.id || '');
     setModalOpen(true);
   };
 
@@ -122,7 +107,6 @@ const Customers = () => {
     setCustCnic(c.cnic || '');
     setCustAddress(c.address || '');
     setCustBalance(c.balance);
-    setCustSalesmanId(c.salesman_id || '');
     setModalOpen(true);
   };
 
@@ -138,8 +122,7 @@ const Customers = () => {
       phone: custPhone || null,
       cnic: custCnic || null,
       address: custAddress || null,
-      balance: parseFloat(custBalance),
-      salesman_id: custSalesmanId ? parseInt(custSalesmanId) : null
+      balance: parseFloat(custBalance)
     };
 
     try {
@@ -212,6 +195,38 @@ const Customers = () => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'PKR' }).format(val);
   };
 
+  const renderBalance = (balance) => {
+    const value = parseFloat(balance) || 0;
+    const formattedAmount = Math.abs(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    if (value < 0) {
+      return (
+        <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+          <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#2563eb' }}>Advance Received</span>
+          <span style={{ color: '#2563eb', fontWeight: 700, fontSize: '14px' }}>PKR {formattedAmount}</span>
+        </div>
+      );
+    }
+
+    if (value > 0) {
+      return (
+        <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+          <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#dc2626' }}>Outstanding</span>
+          <span style={{ color: '#dc2626', fontWeight: 700, fontSize: '14px' }}>PKR {formattedAmount}</span>
+        </div>
+      );
+    }
+
+    return (
+      <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+        <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#16a34a' }}>Settled</span>
+        <span style={{ color: '#16a34a', fontWeight: 700, fontSize: '14px' }}>PKR 0.00</span>
+      </div>
+    );
+  };
+
+  const customerOutstandingTotal = Math.max(0, Number(meta.totalMarketBalance) || 0);
+
   return (
     <div className="customers-page">
       {/* Header Row */}
@@ -233,7 +248,7 @@ const Customers = () => {
           <div>
             <h3 style={{ color: 'var(--text-muted)', fontSize: '14px', fontWeight: 500 }}>Total Outstanding Market Receivables</h3>
             <h2 style={{ fontSize: '28px', color: 'var(--danger)', fontWeight: 700, marginTop: '4px' }}>
-              {formatCurrency(meta.totalMarketBalance)}
+              {formatCurrency(customerOutstandingTotal)}
             </h2>
           </div>
           <div className="alert-icon-wrapper danger-bg">
@@ -244,7 +259,7 @@ const Customers = () => {
 
       {/* Filters Panel */}
       <div className="glass-card filters-panel" style={{ padding: '18px 24px', marginBottom: '20px' }}>
-        <div className="grid grid-3" style={{ gap: '16px' }}>
+        <div className="grid grid-2" style={{ gap: '16px' }}>
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label className="form-label">Search Client</label>
             <div className="search-input-wrapper">
@@ -259,22 +274,8 @@ const Customers = () => {
             </div>
           </div>
 
-          <div className="form-group" style={{ marginBottom: 0 }}>
-            <label className="form-label">Filter Salesman</label>
-            <select
-              className="form-input"
-              value={salesmanFilter}
-              onChange={(e) => { setSalesmanFilter(e.target.value); setPage(1); }}
-            >
-              <option value="">All Salesmen</option>
-              {salesmen.map((s) => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-            </select>
-          </div>
-
           <div className="flex" style={{ alignSelf: 'flex-end', height: '42px' }}>
-            <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => { setSearch(''); setSalesmanFilter(''); setPage(1); }}>
+            <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => { setSearch(''); setPage(1); }}>
               Reset Filters
             </button>
           </div>
@@ -294,8 +295,7 @@ const Customers = () => {
                 <th>Name</th>
                 <th>Phone</th>
                 <th>Address</th>
-                <th>Salesman</th>
-                <th style={{ textAlign: 'right' }}>Outstanding Balance</th>
+                <th style={{ textAlign: 'right' }}>Customer Balance</th>
                 <th style={{ textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
@@ -305,9 +305,8 @@ const Customers = () => {
                   <td style={{ fontWeight: 600 }}>{c.name}</td>
                   <td>{c.phone || 'N/A'}</td>
                   <td>{c.address || 'N/A'}</td>
-                  <td>{c.salesman_name || 'None'}</td>
-                  <td style={{ textAlign: 'right', fontWeight: 700, color: parseFloat(c.balance) > 0 ? 'var(--danger)' : 'var(--success)' }}>
-                    {formatCurrency(c.balance)}
+                  <td style={{ textAlign: 'right', fontWeight: 700 }}>
+                    {renderBalance(c.balance)}
                   </td>
                   <td style={{ textAlign: 'right' }}>
                     <div className="flex" style={{ justifyContent: 'flex-end', gap: '8px' }}>
@@ -331,7 +330,7 @@ const Customers = () => {
               ))}
               {customers.length === 0 && (
                 <tr>
-                  <td colSpan="6" style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-muted)' }}>No customers found</td>
+                  <td colSpan="5" style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-muted)' }}>No customers found</td>
                 </tr>
               )}
             </tbody>
@@ -408,32 +407,16 @@ const Customers = () => {
                 />
               </div>
 
-              <div className="grid grid-2">
-                <div className="form-group">
-                  <label className="form-label">Opening Balance (PKR)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    className="form-input"
-                    value={custBalance}
-                    onChange={(e) => setCustBalance(e.target.value)}
-                    disabled={!!selectedCustomer} // Opening balance can only be set initially
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Linked Salesman</label>
-                  <select
-                    className="form-input"
-                    value={custSalesmanId}
-                    onChange={(e) => setCustSalesmanId(e.target.value)}
-                  >
-                    <option value="">No Salesman</option>
-                    {salesmen.map((s) => (
-                      <option key={s.id} value={s.id}>{s.name}</option>
-                    ))}
-                  </select>
-                </div>
+              <div className="form-group">
+                <label className="form-label">Opening Balance (PKR)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  className="form-input"
+                  value={custBalance}
+                  onChange={(e) => setCustBalance(e.target.value)}
+                  disabled={!!selectedCustomer} // Opening balance can only be set initially
+                />
               </div>
 
               <div className="flex" style={{ justifyContent: 'flex-end', gap: '10px', marginTop: '16px' }}>

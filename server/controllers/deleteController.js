@@ -144,18 +144,6 @@ exports.deleteVendor = (req, res) => safeDelete(req, res, {
   ]
 });
 
-// SALESMEN
-exports.deleteSalesman = (req, res) => safeDelete(req, res, {
-  table: 'salesmen',
-  label: 'Salesman',
-  checks: [
-    {
-      query: 'SELECT COUNT(*) FROM customers WHERE salesman_id=$1 AND deleted_at IS NULL',
-      message: 'Cannot delete — salesman has customers assigned'
-    }
-  ]
-});
-
 // BANKS
 exports.deleteBank = (req, res) => safeDelete(req, res, {
   table: 'banks',

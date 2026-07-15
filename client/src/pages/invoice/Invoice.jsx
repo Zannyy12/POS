@@ -138,7 +138,7 @@ const ReceiptPrintTemplate = React.forwardRef(({ order, items, customer, cashier
 
 const Invoice = () => {
   const [customers, setCustomers] = useState([]);
-  
+
   // Cart & Invoice states
   const [cart, setCart] = useState([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
@@ -152,7 +152,7 @@ const Invoice = () => {
   const [allProducts, setAllProducts] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [dropdownLoading, setDropdownLoading] = useState(false);
-  
+
   // Checkout Result for Receipt Modal
   const [checkoutResult, setCheckoutResult] = useState(null);
   const [receiptOpen, setReceiptOpen] = useState(false);
@@ -163,7 +163,7 @@ const Invoice = () => {
   const printRef = useRef(null);
   // Debounce timer ref
   const debounceRef = useRef(null);
-  
+
   const { addToast, user } = useAuthStore();
 
   const formatCurrency = (val) => {
@@ -177,9 +177,9 @@ const Invoice = () => {
       const raw = res.data;
       const list =
         Array.isArray(raw) ? raw :
-        Array.isArray(raw?.products) ? raw.products :
-        Array.isArray(raw?.data) ? raw.data :
-        [];
+          Array.isArray(raw?.products) ? raw.products :
+            Array.isArray(raw?.data) ? raw.data :
+              [];
 
       // Sort: in-stock first, then out-of-stock, then by name
       const sorted = list.sort((a, b) => {
@@ -203,7 +203,7 @@ const Invoice = () => {
     try {
       const custRes = await axios.get('/api/customers', { params: { limit: 100 } });
       setCustomers(custRes.data.data || []);
-      
+
       // Default set Walk-in Customer
       const walkin = custRes.data.data?.find(c => c.name === 'Walk-in Customer');
       if (walkin) setSelectedCustomerId(walkin.id);
@@ -331,7 +331,7 @@ const Invoice = () => {
 
     // Check if product is already in cart
     const existingIdx = cart.findIndex(item => item.product_id === product.id && item.location === checkoutLocation);
-    
+
     if (existingIdx > -1) {
       const nextCart = [...cart];
       if (nextCart[existingIdx].quantity + 1 > product.quantity) {
@@ -397,7 +397,7 @@ const Invoice = () => {
   // Called on successful payment checkout from PaymentModal
   const handlePaymentSuccess = (paymentDetails) => {
     setPaymentModalOpen(false);
-    
+
     // Prepare receipt template dataset
     setCheckoutResult({
       orderId: paymentDetails.orderId,
@@ -416,7 +416,7 @@ const Invoice = () => {
     setCart([]);
     setInvoiceDiscount('0.00');
     setAmountPaid('0.00');
-    
+
     // Reset customer back to Walk-in & reload
     fetchInitialData();
   };
@@ -429,10 +429,10 @@ const Invoice = () => {
   return (
     <div className="invoice-page">
       <div className="grid invoice-main-grid" style={{ gridTemplateColumns: '2.5fr 1fr', alignItems: 'stretch' }}>
-        
+
         {/* Left billing cart panel */}
         <div className="glass-card flex-col" style={{ padding: '20px', display: 'flex', flexDirection: 'column' }}>
-          
+
           {/* Autocomplete Search input */}
           <div className="form-group search-container-box" style={{ position: 'relative', marginBottom: '20px' }}>
             <label className="form-label">Scan Barcode / Search Product</label>
@@ -694,8 +694,8 @@ const Invoice = () => {
                       <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Code: {item.barcode}</span>
                     </td>
                     <td>
-                      <select 
-                        className="form-input btn-sm" 
+                      <select
+                        className="form-input btn-sm"
                         style={{ padding: '4px 8px' }}
                         value={item.location}
                         onChange={(e) => {
@@ -834,8 +834,8 @@ const Invoice = () => {
             </div>
           </div>
 
-          <button 
-            className="btn btn-primary" 
+          <button
+            className="btn btn-primary"
             style={{ width: '100%', padding: '14px', borderRadius: 'var(--radius-md)', fontSize: '16px', fontWeight: 600, marginTop: 'auto' }}
             onClick={handleCheckout}
             disabled={cart.length === 0}

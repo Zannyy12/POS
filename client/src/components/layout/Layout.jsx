@@ -4,7 +4,7 @@ import useAuthStore from '../../store/useAuthStore';
 import {
   LayoutDashboard, Users, ShoppingBag, Truck, Warehouse,
   Receipt, CreditCard, Wallet, LogOut, Menu, Sun, Moon,
-  FileText, Undo2, Landmark, UserSquare2, ShieldCheck, X
+  FileText, Undo2, Landmark, ShieldCheck, X
 } from 'lucide-react';
 import { MODULE_ORDER } from '../../config/moduleOrder';
 
@@ -22,7 +22,6 @@ const ICON_MAP = {
   '/refund':          Undo2,
   '/banks':           Landmark,
   '/purchase-return': Undo2,
-  '/salesman':        UserSquare2,
   '/admin':           ShieldCheck,
 };
 
